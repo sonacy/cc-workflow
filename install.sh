@@ -4,6 +4,7 @@ set -euo pipefail
 # cc-workflow installer
 # Copies commands, skills, and templates into the target project's .claude/ directory
 # Detects naming conflicts and applies optional prefix
+# Supports re-install: reads existing config, cleans old files, installs new ones
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="${1:-.}"
@@ -22,47 +23,88 @@ if [ ! -d "$TARGET_DIR/.git" ]; then
 fi
 
 COMMANDS=(plan implement debug done)
+CONFIG_FILE="$TARGET_DIR/.claude/.cc-workflow-config"
 PREFIX=""
+OLD_PREFIX=""
 
-# --- Conflict detection ---
-conflicts=()
-for cmd in "${COMMANDS[@]}"; do
-  # Check global commands
-  if [ -f "$HOME/.claude/commands/$cmd.md" ]; then
-    conflicts+=("$cmd (global: ~/.claude/commands/$cmd.md)")
+# --- Detect existing installation ---
+if [ -f "$CONFIG_FILE" ]; then
+  OLD_PREFIX=$(grep '^prefix=' "$CONFIG_FILE" 2>/dev/null | cut -d'=' -f2 || true)
+  if [ -n "$OLD_PREFIX" ]; then
+    echo ""
+    echo "Existing installation found (prefix: '${OLD_PREFIX}')."
+    echo "Commands: /${OLD_PREFIX}-plan, /${OLD_PREFIX}-implement, /${OLD_PREFIX}-debug, /${OLD_PREFIX}-done"
+  else
+    echo ""
+    echo "Existing installation found (no prefix)."
+    echo "Commands: /plan, /implement, /debug, /done"
   fi
-  # Check target project already has these commands (not from us)
-  if [ -f "$TARGET_DIR/.claude/commands/$cmd.md" ]; then
-    # Check if it's our file by looking for "cc-workflow" marker
-    if ! grep -q "cc-workflow" "$TARGET_DIR/.claude/commands/$cmd.md" 2>/dev/null; then
-      conflicts+=("$cmd (project: .claude/commands/$cmd.md)")
-    fi
-  fi
-done
-
-# Check for ECC plugin (provides /plan, /debug as skills)
-if [ -f "$HOME/.claude/plugin.json" ] || [ -d "$HOME/.claude/plugins/cache/everything-claude-code" ]; then
-  for cmd in plan debug; do
-    # Only add if not already detected
-    if [[ ! " ${conflicts[*]:-} " =~ " $cmd " ]]; then
-      conflicts+=("$cmd (ECC plugin skill)")
-    fi
-  done
-fi
-
-if [ ${#conflicts[@]} -gt 0 ]; then
-  echo ""
-  echo "Naming conflicts detected:"
-  for c in "${conflicts[@]}"; do
-    echo "  - /$c"
-  done
   echo ""
   echo "Options:"
-  echo "  1. Enter a prefix (e.g., 'cc' → /cc-plan, /cc-implement, /cc-debug, /cc-done)"
-  echo "  2. Press Enter to install anyway (commands may shadow existing ones)"
+  echo "  1. Press Enter to re-install with same prefix"
+  echo "  2. Enter a new prefix to change it"
+  echo "  3. Enter 'none' to remove prefix"
   echo ""
-  read -rp "Prefix (or Enter to skip): " PREFIX
-  PREFIX="${PREFIX:-}"
+  read -rp "Prefix [${OLD_PREFIX:-none}]: " input
+  if [ "$input" = "none" ]; then
+    PREFIX=""
+  elif [ -n "$input" ]; then
+    PREFIX="$input"
+  else
+    PREFIX="$OLD_PREFIX"
+  fi
+
+  # Clean up old command files
+  for cmd in "${COMMANDS[@]}"; do
+    if [ -n "$OLD_PREFIX" ]; then
+      old_file="$TARGET_DIR/.claude/commands/${OLD_PREFIX}-${cmd}.md"
+    else
+      old_file="$TARGET_DIR/.claude/commands/${cmd}.md"
+    fi
+    if [ -f "$old_file" ]; then
+      rm "$old_file"
+    fi
+  done
+  echo "  Removed old command files."
+else
+  # --- Fresh install: conflict detection ---
+  conflicts=()
+  for cmd in "${COMMANDS[@]}"; do
+    # Check global commands
+    if [ -f "$HOME/.claude/commands/$cmd.md" ]; then
+      conflicts+=("$cmd (global: ~/.claude/commands/$cmd.md)")
+    fi
+    # Check target project already has these commands (not from us)
+    if [ -f "$TARGET_DIR/.claude/commands/$cmd.md" ]; then
+      if ! grep -q "cc-workflow" "$TARGET_DIR/.claude/commands/$cmd.md" 2>/dev/null; then
+        conflicts+=("$cmd (project: .claude/commands/$cmd.md)")
+      fi
+    fi
+  done
+
+  # Check for ECC plugin (provides /plan, /debug as skills)
+  if [ -f "$HOME/.claude/plugin.json" ] || [ -d "$HOME/.claude/plugins/cache/everything-claude-code" ]; then
+    for cmd in plan debug; do
+      if [[ ! " ${conflicts[*]:-} " =~ " $cmd " ]]; then
+        conflicts+=("$cmd (ECC plugin skill)")
+      fi
+    done
+  fi
+
+  if [ ${#conflicts[@]} -gt 0 ]; then
+    echo ""
+    echo "Naming conflicts detected:"
+    for c in "${conflicts[@]}"; do
+      echo "  - /$c"
+    done
+    echo ""
+    echo "Options:"
+    echo "  1. Enter a prefix (e.g., 'cc' → /cc-plan, /cc-implement, /cc-debug, /cc-done)"
+    echo "  2. Press Enter to install anyway (commands may shadow existing ones)"
+    echo ""
+    read -rp "Prefix (or Enter to skip): " PREFIX
+    PREFIX="${PREFIX:-}"
+  fi
 fi
 
 # --- Install commands ---
@@ -78,7 +120,6 @@ for cmd in "${COMMANDS[@]}"; do
   fi
 
   # Copy and apply prefix to cross-references inside the file
-  # Only replace /command when NOT followed by [a-z_/.-] (avoid hitting paths like /plans/)
   if [ -n "$PREFIX" ]; then
     sed \
       -e "s|\`/plan\`|\`/${PREFIX}-plan\`|g" \
@@ -116,6 +157,16 @@ echo "  Installed templates: prd, architecture, plan, state"
 mkdir -p "$TARGET_DIR/.claude/skills/workflow-state"
 cp "$SCRIPT_DIR/skills/workflow-state/SKILL.md" "$TARGET_DIR/.claude/skills/workflow-state/SKILL.md"
 echo "  Installed skill: workflow-state"
+
+# --- Save config ---
+mkdir -p "$(dirname "$CONFIG_FILE")"
+cat > "$CONFIG_FILE" <<EOF
+# cc-workflow installation config
+prefix=${PREFIX}
+installed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+source_dir=${SCRIPT_DIR}
+EOF
+echo "  Saved config: .claude/.cc-workflow-config"
 
 # --- Summary ---
 echo ""
