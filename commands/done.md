@@ -244,15 +244,69 @@ git commit -m "chore: archive workflow state for {{feature}}"
 git push origin {{branch}}
 ```
 
-## Step 10: Suggest Next Action
+## Step 10: Merge Check
+
+Before completing, ensure the feature branch is merged into the default branch.
+
+### 10a: Detect Default Branch
+
+Determine the default branch name:
+1. Try `git remote show origin` and parse "HEAD branch"
+2. If that fails, check which of `main`, `master`, `develop` exists locally
+3. If none found, ask the user
+
+### 10b: Check if Merged
+
+Check if the feature branch commits are on the default branch:
+```bash
+git fetch origin {{default_branch}}
+git log origin/{{default_branch}} --oneline | grep {{latest_commit_sha}}
+```
+
+Or more reliably:
+```bash
+git branch -r --contains HEAD | grep "origin/{{default_branch}}"
+```
+
+### 10c: If NOT Merged
+
+Tell the user:
+```
+Your branch `{{branch}}` is not yet merged into `{{default_branch}}`.
+
+Please merge it via your platform (GitHub, GitLab, etc.):
+- Push is done: create a PR/MR and merge it
+- Or merge locally if that's your workflow
+
+Type "merged" when done, or "skip" to finish without merging.
+```
+
+**WAIT for user response.**
+
+If the user says "merged":
+- Run `git fetch origin {{default_branch}}` and re-check
+- If still not merged, tell them: "I don't see the merge on `{{default_branch}}` yet. Please check and try again, or type 'skip'."
+
+If the user says "skip":
+- Proceed without merging (they can merge later)
+
+### 10d: Switch to Default Branch
+
+After merge is confirmed (or skipped):
+```bash
+git checkout {{default_branch}}
+git pull origin {{default_branch}}
+```
+
+This ensures the user is on an up-to-date default branch, ready for the next `/plan`.
+
+## Step 11: Suggest Next Action
 
 ```
-All done! Branch `{{branch}}` is ready for review.
+Workflow complete! Switched to `{{default_branch}}` (up to date).
 
-Next steps:
-- Create a PR: `gh pr create --title "{{feature}}" --body "..."`
-- Or manually create a PR on GitHub
-- Plan docs are at `{{plan_dir}}/` for reference
+Feature: {{feature}}
+Branch: {{branch}} (merged)
 
 Start a new feature: `/plan <description>`
 ```
