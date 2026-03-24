@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "feature": "Colon prefix + no auto-advance + /where command",
+  "slug": "prefix-colon-status-cmd",
+  "branch": "feat/prefix-colon-status-cmd",
+  "branch_type": "feat",
+  "phase": "plan-complete",
+  "plan_dir": ".claude/plans/2026-03-23-prefix-colon-status-cmd",
+  "created_at": "2026-03-23T15:00:00Z",
+  "updated_at": "2026-03-23T15:00:00Z",
+  "steps": [
+    {"id": 1, "name": "Change prefix separator to colon in install.sh", "status": "pending", "commit": null},
+    {"id": 2, "name": "Add /where command", "status": "pending", "commit": null},
+    {"id": 3, "name": "Add no-auto-advance rule to all commands and CLAUDE.md", "status": "pending", "commit": null},
+    {"id": 4, "name": "Update README", "status": "pending", "commit": null}
+  ],
+  "debug_log": []
+}

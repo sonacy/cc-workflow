@@ -4,6 +4,7 @@ A 4-phase Claude Code workflow for feature development. Plan, implement, debug, 
 
 ```
 /plan  →  /implement  →  /debug  →  /done
+                  /where (check state anytime)
 ```
 
 ## Install
@@ -22,9 +23,13 @@ Naming conflicts detected:
 Prefix (or Enter to skip): cc
 ```
 
-With prefix `cc`, commands become `/cc-plan`, `/cc-implement`, `/cc-debug`, `/cc-done`. All cross-references inside the command files are updated automatically.
+With prefix `cc`, commands become `/cc:plan`, `/cc:implement`, `/cc:debug`, `/cc:done`, `/cc:where`. All cross-references inside the command files are updated automatically.
+
+Re-running `./install.sh` on an already-installed project detects the existing prefix and lets you keep it, change it, or remove it.
 
 ## Usage
+
+Each command finishes and suggests the next step, but **never auto-advances**. You control the pace.
 
 ### /plan \<description\>
 
@@ -40,7 +45,7 @@ Researches your codebase, asks you about gray-area decisions, generates PRD + ar
 /implement
 ```
 
-Picks the next step from the plan, implements it, runs two-layer code review (spec compliance + quality), commits and pushes. Run once per step. Use `/implement status` to check progress.
+Picks the next step from the plan, implements it, runs two-layer code review (spec compliance + quality), commits and pushes. Run once per step.
 
 ### /debug \<bug\>
 
@@ -56,7 +61,15 @@ Investigates root cause (read error → reproduce → check changes → identify
 /done
 ```
 
-Runs verification (build, lint, tests, security), final code review, captures learnings to `docs/solutions/`, updates docs, archives state, and suggests creating a PR.
+Runs verification (build, lint, tests, security), final code review, captures learnings to `docs/solutions/`, checks merge status, switches to default branch.
+
+### /where
+
+```
+/where
+```
+
+Shows current workflow state: phase, step progress, bugs fixed, and what to do next. Read-only — never executes actions.
 
 ## License
 

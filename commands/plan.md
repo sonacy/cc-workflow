@@ -216,4 +216,7 @@ Plan complete! Created branch `{{branch_type}}/{{slug}}` with plan documents.
   └── plan.md
 
 Next: Run `/implement` to start Step 1.
+You can also run `/where` to check your current state at any time.
 ```
+
+**STOP HERE. Do NOT auto-advance to `/implement`. Wait for the user to invoke the next command.**
