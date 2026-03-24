@@ -310,3 +310,5 @@ Branch: {{branch}} (merged)
 
 Start a new feature: `/plan <description>`
 ```
+
+**STOP HERE. The workflow is complete. Do NOT start a new workflow automatically.**

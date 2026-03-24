@@ -125,4 +125,7 @@ Options:
 - Found another bug? Run `/debug <description>`
 - Want to add more steps? Run `/implement`
 - Ready to wrap up? Run `/done`
+- Check state: Run `/where`
 ```
+
+**STOP HERE. Do NOT auto-advance to the next phase. Wait for the user to invoke the next command.**

@@ -160,4 +160,7 @@ Next: Run `/implement` for Step {{next_id}}: {{next_name}}
 {{else}}
 All steps complete! Run `/debug` if you found issues, or `/done` to wrap up.
 {{end}}
+Run `/where` to check your current state at any time.
 ```
+
+**STOP HERE. Do NOT auto-advance to the next step or phase. Wait for the user to invoke the next command.**
