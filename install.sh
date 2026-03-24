@@ -3,6 +3,7 @@ set -euo pipefail
 
 # cc-workflow installer
 # Copies commands, skills, and templates into the target project's .claude/ directory
+# Detects naming conflicts and applies optional prefix
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="${1:-.}"
@@ -20,34 +21,116 @@ if [ ! -d "$TARGET_DIR/.git" ]; then
   exit 1
 fi
 
-# Create directories
+COMMANDS=(plan implement debug done)
+PREFIX=""
+
+# --- Conflict detection ---
+conflicts=()
+for cmd in "${COMMANDS[@]}"; do
+  # Check global commands
+  if [ -f "$HOME/.claude/commands/$cmd.md" ]; then
+    conflicts+=("$cmd (global: ~/.claude/commands/$cmd.md)")
+  fi
+  # Check target project already has these commands (not from us)
+  if [ -f "$TARGET_DIR/.claude/commands/$cmd.md" ]; then
+    # Check if it's our file by looking for "cc-workflow" marker
+    if ! grep -q "cc-workflow" "$TARGET_DIR/.claude/commands/$cmd.md" 2>/dev/null; then
+      conflicts+=("$cmd (project: .claude/commands/$cmd.md)")
+    fi
+  fi
+done
+
+# Check for ECC plugin (provides /plan, /debug as skills)
+if [ -f "$HOME/.claude/plugin.json" ] || [ -d "$HOME/.claude/plugins/cache/everything-claude-code" ]; then
+  for cmd in plan debug; do
+    # Only add if not already detected
+    if [[ ! " ${conflicts[*]:-} " =~ " $cmd " ]]; then
+      conflicts+=("$cmd (ECC plugin skill)")
+    fi
+  done
+fi
+
+if [ ${#conflicts[@]} -gt 0 ]; then
+  echo ""
+  echo "Naming conflicts detected:"
+  for c in "${conflicts[@]}"; do
+    echo "  - /$c"
+  done
+  echo ""
+  echo "Options:"
+  echo "  1. Enter a prefix (e.g., 'cc' → /cc-plan, /cc-implement, /cc-debug, /cc-done)"
+  echo "  2. Press Enter to install anyway (commands may shadow existing ones)"
+  echo ""
+  read -rp "Prefix (or Enter to skip): " PREFIX
+  PREFIX="${PREFIX:-}"
+fi
+
+# --- Install commands ---
 mkdir -p "$TARGET_DIR/.claude/commands"
 mkdir -p "$TARGET_DIR/.claude/workflow"
 mkdir -p "$TARGET_DIR/.claude/workflow/archive"
 
-# Copy commands (project-local, so /plan etc. work directly)
-for cmd in plan implement debug done; do
-  cp "$SCRIPT_DIR/commands/$cmd.md" "$TARGET_DIR/.claude/commands/$cmd.md"
-  echo "  Installed command: /$cmd"
+for cmd in "${COMMANDS[@]}"; do
+  if [ -n "$PREFIX" ]; then
+    dest_name="${PREFIX}-${cmd}.md"
+  else
+    dest_name="${cmd}.md"
+  fi
+
+  # Copy and apply prefix to cross-references inside the file
+  # Only replace /command when NOT followed by [a-z_/.-] (avoid hitting paths like /plans/)
+  if [ -n "$PREFIX" ]; then
+    sed \
+      -e "s|\`/plan\`|\`/${PREFIX}-plan\`|g" \
+      -e "s|\`/implement\`|\`/${PREFIX}-implement\`|g" \
+      -e "s|\`/debug\`|\`/${PREFIX}-debug\`|g" \
+      -e "s|\`/done\`|\`/${PREFIX}-done\`|g" \
+      -e "s|\`/plan |\`/${PREFIX}-plan |g" \
+      -e "s|\`/implement |\`/${PREFIX}-implement |g" \
+      -e "s|\`/debug |\`/${PREFIX}-debug |g" \
+      -e "s|\`/done |\`/${PREFIX}-done |g" \
+      -e "s|# /plan |# /${PREFIX}-plan |g" \
+      -e "s|# /implement |# /${PREFIX}-implement |g" \
+      -e "s|# /debug |# /${PREFIX}-debug |g" \
+      -e "s|# /done |# /${PREFIX}-done |g" \
+      "$SCRIPT_DIR/commands/$cmd.md" > "$TARGET_DIR/.claude/commands/$dest_name"
+  else
+    cp "$SCRIPT_DIR/commands/$cmd.md" "$TARGET_DIR/.claude/commands/$dest_name"
+  fi
+
+  if [ -n "$PREFIX" ]; then
+    echo "  Installed command: /${PREFIX}-${cmd}"
+  else
+    echo "  Installed command: /$cmd"
+  fi
 done
 
-# Copy templates (used by /plan to generate docs)
+# --- Install templates ---
 mkdir -p "$TARGET_DIR/.claude/templates/cc-workflow"
 for tmpl in prd architecture plan state; do
   cp "$SCRIPT_DIR/templates/$tmpl.md" "$TARGET_DIR/.claude/templates/cc-workflow/$tmpl.md"
 done
 echo "  Installed templates: prd, architecture, plan, state"
 
-# Copy workflow-state skill
+# --- Install skill ---
 mkdir -p "$TARGET_DIR/.claude/skills/workflow-state"
 cp "$SCRIPT_DIR/skills/workflow-state/SKILL.md" "$TARGET_DIR/.claude/skills/workflow-state/SKILL.md"
 echo "  Installed skill: workflow-state"
 
+# --- Summary ---
 echo ""
 echo "Done! cc-workflow is installed."
 echo ""
-echo "Usage:"
-echo "  /plan <description>     Start planning a feature"
-echo "  /implement              Implement the next step"
-echo "  /debug <bug>            Fix a bug with TDD"
-echo "  /done                   Finish and prepare for PR"
+if [ -n "$PREFIX" ]; then
+  echo "Usage (with prefix '${PREFIX}'):"
+  echo "  /${PREFIX}-plan <description>     Start planning a feature"
+  echo "  /${PREFIX}-implement              Implement the next step"
+  echo "  /${PREFIX}-debug <bug>            Fix a bug"
+  echo "  /${PREFIX}-done                   Finish and prepare for PR"
+else
+  echo "Usage:"
+  echo "  /plan <description>     Start planning a feature"
+  echo "  /implement              Implement the next step"
+  echo "  /debug <bug>            Fix a bug"
+  echo "  /done                   Finish and prepare for PR"
+fi

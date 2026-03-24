@@ -12,7 +12,17 @@ A 4-phase Claude Code workflow for feature development. Plan, implement, debug, 
 ./install.sh /path/to/your/project
 ```
 
-Copies commands into your project's `.claude/commands/` so `/plan`, `/implement`, `/debug`, `/done` are available.
+The installer detects naming conflicts with existing tools (e.g., ECC plugin). If conflicts are found, it asks for a prefix:
+
+```
+Naming conflicts detected:
+  - /plan (ECC plugin skill)
+  - /debug (ECC plugin skill)
+
+Prefix (or Enter to skip): cc
+```
+
+With prefix `cc`, commands become `/cc-plan`, `/cc-implement`, `/cc-debug`, `/cc-done`. All cross-references inside the command files are updated automatically.
 
 ## Usage
 
