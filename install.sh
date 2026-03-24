@@ -22,7 +22,7 @@ if [ ! -d "$TARGET_DIR/.git" ]; then
   exit 1
 fi
 
-COMMANDS=(plan implement debug done)
+COMMANDS=(plan implement debug done where)
 CONFIG_FILE="$TARGET_DIR/.claude/.cc-workflow-config"
 PREFIX=""
 OLD_PREFIX=""
@@ -33,7 +33,7 @@ if [ -f "$CONFIG_FILE" ]; then
   if [ -n "$OLD_PREFIX" ]; then
     echo ""
     echo "Existing installation found (prefix: '${OLD_PREFIX}')."
-    echo "Commands: /${OLD_PREFIX}-plan, /${OLD_PREFIX}-implement, /${OLD_PREFIX}-debug, /${OLD_PREFIX}-done"
+    echo "Commands: /${OLD_PREFIX}:plan, /${OLD_PREFIX}:implement, /${OLD_PREFIX}:debug, /${OLD_PREFIX}:done, /${OLD_PREFIX}:where"
   else
     echo ""
     echo "Existing installation found (no prefix)."
@@ -54,15 +54,18 @@ if [ -f "$CONFIG_FILE" ]; then
     PREFIX="$OLD_PREFIX"
   fi
 
-  # Clean up old command files
+  # Clean up old command files (both colon and hyphen style)
   for cmd in "${COMMANDS[@]}"; do
     if [ -n "$OLD_PREFIX" ]; then
+      # Remove colon-style (current format)
+      old_file="$TARGET_DIR/.claude/commands/${OLD_PREFIX}:${cmd}.md"
+      [ -f "$old_file" ] && rm "$old_file"
+      # Remove hyphen-style (legacy format)
       old_file="$TARGET_DIR/.claude/commands/${OLD_PREFIX}-${cmd}.md"
+      [ -f "$old_file" ] && rm "$old_file"
     else
       old_file="$TARGET_DIR/.claude/commands/${cmd}.md"
-    fi
-    if [ -f "$old_file" ]; then
-      rm "$old_file"
+      [ -f "$old_file" ] && rm "$old_file"
     fi
   done
   echo "  Removed old command files."
@@ -99,7 +102,7 @@ else
     done
     echo ""
     echo "Options:"
-    echo "  1. Enter a prefix (e.g., 'cc' → /cc-plan, /cc-implement, /cc-debug, /cc-done)"
+    echo "  1. Enter a prefix (e.g., 'cc' → /cc:plan, /cc:implement, /cc:debug, /cc:done, /cc:where)"
     echo "  2. Press Enter to install anyway (commands may shadow existing ones)"
     echo ""
     read -rp "Prefix (or Enter to skip): " PREFIX
@@ -114,7 +117,7 @@ mkdir -p "$TARGET_DIR/.claude/workflow/archive"
 
 for cmd in "${COMMANDS[@]}"; do
   if [ -n "$PREFIX" ]; then
-    dest_name="${PREFIX}-${cmd}.md"
+    dest_name="${PREFIX}:${cmd}.md"
   else
     dest_name="${cmd}.md"
   fi
@@ -122,25 +125,28 @@ for cmd in "${COMMANDS[@]}"; do
   # Copy and apply prefix to cross-references inside the file
   if [ -n "$PREFIX" ]; then
     sed \
-      -e "s|\`/plan\`|\`/${PREFIX}-plan\`|g" \
-      -e "s|\`/implement\`|\`/${PREFIX}-implement\`|g" \
-      -e "s|\`/debug\`|\`/${PREFIX}-debug\`|g" \
-      -e "s|\`/done\`|\`/${PREFIX}-done\`|g" \
-      -e "s|\`/plan |\`/${PREFIX}-plan |g" \
-      -e "s|\`/implement |\`/${PREFIX}-implement |g" \
-      -e "s|\`/debug |\`/${PREFIX}-debug |g" \
-      -e "s|\`/done |\`/${PREFIX}-done |g" \
-      -e "s|# /plan |# /${PREFIX}-plan |g" \
-      -e "s|# /implement |# /${PREFIX}-implement |g" \
-      -e "s|# /debug |# /${PREFIX}-debug |g" \
-      -e "s|# /done |# /${PREFIX}-done |g" \
+      -e "s|\`/plan\`|\`/${PREFIX}:plan\`|g" \
+      -e "s|\`/implement\`|\`/${PREFIX}:implement\`|g" \
+      -e "s|\`/debug\`|\`/${PREFIX}:debug\`|g" \
+      -e "s|\`/done\`|\`/${PREFIX}:done\`|g" \
+      -e "s|\`/plan |\`/${PREFIX}:plan |g" \
+      -e "s|\`/implement |\`/${PREFIX}:implement |g" \
+      -e "s|\`/debug |\`/${PREFIX}:debug |g" \
+      -e "s|\`/done |\`/${PREFIX}:done |g" \
+      -e "s|# /plan |# /${PREFIX}:plan |g" \
+      -e "s|# /implement |# /${PREFIX}:implement |g" \
+      -e "s|# /debug |# /${PREFIX}:debug |g" \
+      -e "s|# /done |# /${PREFIX}:done |g" \
+      -e "s|\`/where\`|\`/${PREFIX}:where\`|g" \
+      -e "s|\`/where |\`/${PREFIX}:where |g" \
+      -e "s|# /where |# /${PREFIX}:where |g" \
       "$SCRIPT_DIR/commands/$cmd.md" > "$TARGET_DIR/.claude/commands/$dest_name"
   else
     cp "$SCRIPT_DIR/commands/$cmd.md" "$TARGET_DIR/.claude/commands/$dest_name"
   fi
 
   if [ -n "$PREFIX" ]; then
-    echo "  Installed command: /${PREFIX}-${cmd}"
+    echo "  Installed command: /${PREFIX}:${cmd}"
   else
     echo "  Installed command: /$cmd"
   fi
@@ -174,14 +180,16 @@ echo "Done! cc-workflow is installed."
 echo ""
 if [ -n "$PREFIX" ]; then
   echo "Usage (with prefix '${PREFIX}'):"
-  echo "  /${PREFIX}-plan <description>     Start planning a feature"
-  echo "  /${PREFIX}-implement              Implement the next step"
-  echo "  /${PREFIX}-debug <bug>            Fix a bug"
-  echo "  /${PREFIX}-done                   Finish and prepare for PR"
+  echo "  /${PREFIX}:plan <description>     Start planning a feature"
+  echo "  /${PREFIX}:implement              Implement the next step"
+  echo "  /${PREFIX}:debug <bug>            Fix a bug"
+  echo "  /${PREFIX}:done                   Finish and prepare for PR"
+  echo "  /${PREFIX}:where                  Show current state and next action"
 else
   echo "Usage:"
   echo "  /plan <description>     Start planning a feature"
   echo "  /implement              Implement the next step"
   echo "  /debug <bug>            Fix a bug"
   echo "  /done                   Finish and prepare for PR"
+  echo "  /where                  Show current state and next action"
 fi
