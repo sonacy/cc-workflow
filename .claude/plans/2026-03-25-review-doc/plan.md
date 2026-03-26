@@ -6,7 +6,7 @@
 
 ### Step 1: Add review doc generation step to /done
 
-- **Description**: Add a new step in done.md that generates `.claude/plans/<slug>/review.md` from session memory. Covers: what was planned, how it was built, bugs and fixes, code review results, learnings.
+- **Description**: Add a new step in done.md that generates `.claude/plans/<slug>/review.md` from session memory. Covers: what was planned, how it was built, bugs and fixes, code review results, learnings. Each phase section includes duration (estimated from commit timestamps) and number of conversation rounds (estimated from commit count + debug_log entries).
 - **Files**: commands/done.md
 - **Complexity**: Low
 - **Depends on**: none
