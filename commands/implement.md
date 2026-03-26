@@ -1,18 +1,19 @@
 ---
-description: "Implement the next step from the plan, review, then commit and push"
+description: "Implement ALL steps from the plan sequentially, run lint/test, create PR/MR"
 ---
 
-# /implement — Implement One Step
+# /implement — Implement All Steps
 
-You are in Phase 2 of cc-workflow. Your job is to implement one step from the plan, get it reviewed, then commit and push.
+You are in Phase 2 of cc-workflow. Your job is to implement ALL remaining steps from the plan sequentially, run lint/test/build after, fix any errors, then create a PR/MR.
+
+**Do NOT stop between steps. Implement all pending steps in one go. Show progress as each step completes.**
 
 ## Input
 
 Argument: $ARGUMENTS
 
-- `next` (default, or no argument) — implement the next pending step
+- (empty) — implement all pending steps sequentially
 - `status` — show progress overview without implementing anything
-- `<number>` — implement a specific step by ID (e.g., `/implement 3`)
 
 ## Step 1: Load State
 
@@ -29,8 +30,6 @@ If `phase` is `done`:
 
 Valid phases to proceed: `plan-complete`, `implement`, `debug`
 
-If coming from `debug` phase, update phase to `implement`.
-
 ## Step 2: Handle "status" Command
 
 If argument is `status`, show progress and stop:
@@ -46,8 +45,6 @@ If argument is `status`, show progress and stop:
 | 3 | {{name}} | pending |
 
 Progress: 1/3 steps complete
-
-Run `/implement` to continue with Step 2.
 ```
 
 Return after showing status — do not implement anything.
@@ -59,108 +56,129 @@ Read ALL plan documents to provide full context:
 - `{{plan_dir}}/architecture.md` — design decisions, ERD, API contracts
 - `{{plan_dir}}/prd.md` — requirements and acceptance criteria
 
-Also check `docs/solutions/` for any relevant past learnings that could help with this step.
+Also check `docs/solutions/` for any relevant past learnings.
 
-## Step 4: Identify Target Step
+## Step 4: Implement All Pending Steps
 
-- If argument is a number, find that step in state.steps
-- If argument is `next` or empty, find the first step with `status: "pending"`
-- If no pending steps remain, tell user: "All steps are done! Run `/debug` if you found issues, or `/done` to wrap up."
+For each step with `status: "pending"`, in order:
 
-Update the target step's status to `in-progress` in state.json.
-Update phase to `implement`.
-
-## Step 5: Show Step Details
+### 4a: Show Progress
 
 ```
 ## Implementing Step {{id}}/{{total}}: {{name}}
-
-{{step_description_from_plan}}
-
-**Files**: {{files_to_create_or_modify}}
-**Complexity**: {{complexity}}
-**Depends on**: {{dependencies}}
 ```
 
-## Step 6: Implement
+### 4b: Implement
 
-Implement the step according to the plan:
 - Follow the architecture decisions in `architecture.md`
 - Follow existing project patterns and conventions
 - Keep changes focused on this step only
 - Write clean, readable code
 
-If the project has existing tests, run them after implementation to ensure nothing is broken.
+### 4c: Commit
 
-## Step 7: Two-Layer Code Review
-
-### 7a: Spec Compliance Review
-
-Dispatch a **code-reviewer** agent to check spec compliance. Provide:
-- The step description from the plan
-- The acceptance criteria from the PRD
-- The git diff of changes made in this step
-
-Ask it to verify:
-- Does the implementation match what the plan specified?
-- Are the acceptance criteria met?
-- Is there scope creep (code that wasn't in the plan)?
-
-Fix any spec compliance issues before proceeding.
-
-### 7b: Code Quality Review
-
-Dispatch the appropriate language-specific reviewer agent:
-- TypeScript/JavaScript → **typescript-reviewer** agent
-- Python → **python-reviewer** agent
-- Go → **go-reviewer** agent
-- Rust → **rust-reviewer** agent
-- Java → **java-reviewer** agent
-- Other → **code-reviewer** agent (generic)
-
-Provide the full git diff and ask for:
-- CRITICAL issues (bugs, security, data loss) — must fix
-- HIGH issues (architecture, error handling, test gaps) — should fix
-- MEDIUM/LOW issues — note but don't block
-
-Fix CRITICAL issues. Fix HIGH issues if straightforward. Proceed after fixing.
-
-## Step 8: Commit and Push
-
-Stage and commit the changes:
-
+After each step:
 ```bash
 git add <changed_files>
 git commit -m "{{branch_type}}({{scope}}): {{step_description}} [step {{id}}/{{total}}]"
-git push -u origin {{branch}}
 ```
 
-Where:
-- `scope` is derived from the primary module/component being changed
-- `step_description` is a concise summary of what was implemented
+### 4d: Update State
 
-## Step 9: Update State
-
-Update `.claude/workflow/state.json`:
 - Set the step's `status` to `done`
 - Set the step's `commit` to the commit SHA
 - Update `updated_at`
+- Set `phase` to `implement`
 
-## Step 10: Report Progress
+### 4e: Continue to Next Step
+
+**Do NOT stop. Proceed to the next pending step immediately.**
+
+Repeat 4a-4d for all pending steps.
+
+## Step 5: Run Lint, Tests, and Build
+
+After ALL steps are implemented, run the project's quality checks:
+
+### 5a: Build
+Detect and run the project's build command:
+- `npm run build` / `pnpm build` / `yarn build`
+- `cargo build`
+- `go build ./...`
+- `make build`
+
+### 5b: Lint
+Run the project's linter:
+- `npm run lint` / `pnpm lint`
+- `cargo clippy`
+- `golangci-lint run`
+- `ruff check .`
+
+### 5c: Tests
+Run the full test suite:
+- `npm test`
+- `cargo test`
+- `go test ./...`
+- `pytest`
+
+### 5d: Fix Errors
+
+If any check fails:
+1. Read the error output
+2. Fix the issue
+3. Re-run the failing check
+4. Repeat until all checks pass
+5. Commit fixes: `fix: resolve lint/test/build errors`
+
+If a check doesn't apply (no build system, no linter, no tests), skip it.
+
+## Step 6: Push
+
+```bash
+git push -u origin {{branch}}
+```
+
+## Step 7: Create PR/MR
+
+Detect the platform from the git remote URL:
+
+1. Check: `git remote get-url origin`
+2. If contains `github.com`:
+   - Check if `gh` CLI is available: `which gh`
+   - If yes: `gh pr create --title "{{feature}}" --body "{{auto-generated summary}}"`
+   - If no: Tell user to create PR manually on GitHub
+3. If contains `gitlab.com` or `gitlab`:
+   - Check if `glab` CLI is available: `which glab`
+   - If yes: `glab mr create --title "{{feature}}" --description "{{auto-generated summary}}"`
+   - If no: Tell user to create MR manually on GitLab
+4. Otherwise:
+   - Tell user: "Push is done. Please create a PR/MR on your platform for branch `{{branch}}`."
+
+The auto-generated summary should include:
+- Feature name
+- List of implementation steps with commit SHAs
+- Files changed (`git diff --stat main...HEAD`)
+
+## Step 8: Report
 
 ```
-## Step {{id}}/{{total}} complete: {{name}}
+## Implementation Complete: {{feature}}
 
-{{brief_summary_of_what_was_done}}
+### Steps Completed
+| # | Step | Commit |
+|---|------|--------|
+| 1 | {{name}} | {{short_sha}} |
+| 2 | {{name}} | {{short_sha}} |
+...
 
-Commit: {{short_sha}} — {{commit_message}}
+### Quality Checks
+Build: PASS/FAIL | Lint: PASS/FAIL | Tests: PASS/FAIL
 
-{{if more steps}}
-Next: Run `/implement` for Step {{next_id}}: {{next_name}}
-{{else}}
-All steps complete! Run `/debug` if you found issues, or `/done` to wrap up.
-{{end}}
+### PR/MR
+{{PR_URL or "Please create manually"}}
+
+Next: `/debug <bug>` if you found issues, or `/done` to wrap up.
 Run `/where` to check your current state at any time.
 ```
 
-**STOP HERE. Do NOT auto-advance to the next step or phase. Wait for the user to invoke the next command.**
+**STOP HERE. Do NOT auto-advance to the next phase. Wait for the user to invoke the next command.**
