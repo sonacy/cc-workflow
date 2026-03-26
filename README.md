@@ -4,7 +4,7 @@ A 4-phase Claude Code workflow for feature development. Plan, implement, debug, 
 
 ```
 /plan  →  /implement  →  /debug  →  /done
-                  /where (check state anytime)
+         /where  /revert  /archive
 ```
 
 ## Install
@@ -13,63 +13,46 @@ A 4-phase Claude Code workflow for feature development. Plan, implement, debug, 
 ./install.sh /path/to/your/project
 ```
 
-The installer detects naming conflicts with existing tools (e.g., ECC plugin). If conflicts are found, it asks for a prefix:
+The installer detects naming conflicts (e.g., ECC plugin) and asks for a prefix:
 
 ```
-Naming conflicts detected:
-  - /plan (ECC plugin skill)
-  - /debug (ECC plugin skill)
-
 Prefix (or Enter to skip): cc
 ```
 
-With prefix `cc`, commands become `/cc:plan`, `/cc:implement`, `/cc:debug`, `/cc:done`, `/cc:where`. All cross-references inside the command files are updated automatically.
+With prefix `cc`, commands become `/cc:plan`, `/cc:implement`, etc. Re-running install detects existing prefix and lets you change it.
 
-Re-running `./install.sh` on an already-installed project detects the existing prefix and lets you keep it, change it, or remove it.
-
-## Usage
-
-Each command finishes and suggests the next step, but **never auto-advances**. You control the pace.
+## Commands
 
 ### /plan \<description\>
 
-```
-/plan add user authentication with JWT
-```
-
-Researches your codebase, asks you about gray-area decisions, generates PRD + architecture + implementation plan, reviews the plan, then creates a branch and commits the docs.
+Researches codebase, asks about gray-area decisions, generates PRD + architecture + implementation plan, reviews the plan, creates branch, commits docs.
 
 ### /implement
 
-```
-/implement
-```
-
-Picks the next step from the plan, implements it, runs two-layer code review (spec compliance + quality), commits and pushes. Run once per step.
+Implements ALL pending steps sequentially (no stopping between steps). After all steps: runs lint, test, build — fixes errors automatically. Then detects platform (GitHub/GitLab) and creates PR/MR.
 
 ### /debug \<bug\>
 
-```
-/debug login fails when password is empty
-```
-
-Investigates root cause (read error → reproduce → check changes → identify cause), applies minimal fix, verifies no regressions, commits and pushes. Run once per bug.
+Investigates root cause systematically, applies minimal fix, verifies no regressions, commits and pushes. Run once per bug.
 
 ### /done
 
-```
-/done
-```
-
-Runs verification (build, lint, tests, security), final code review, captures learnings to `docs/solutions/`, checks merge status, switches to default branch.
+Runs mandatory interactive code review — presents findings, waits for your approval before fixing. Re-runs lint/test/build after fixes. Captures learnings. Checks merge status, switches to default branch.
 
 ### /where
 
-```
-/where
-```
+Shows current workflow state: phase, step progress, bugs fixed, and what to do next.
 
-Shows current workflow state: phase, step progress, bugs fixed, and what to do next. Read-only — never executes actions.
+### /revert \<phase\>
+
+Revert to a previous phase:
+- `/revert plan` — discard everything, delete branch, start fresh
+- `/revert implement` — discard code, keep plan docs
+- `/revert debug` — discard debug fixes, keep implementation
+
+### /archive
+
+Abandon the current feature. Asks for a reason, writes an archive doc, deletes the branch, switches to default branch.
 
 ## License
 

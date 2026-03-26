@@ -10,7 +10,7 @@
 
 ## File Locations
 
-- **Commands**: `commands/{plan,implement,debug,done,where}.md` — source; installed to `<project>/.claude/commands/`
+- **Commands**: `commands/{plan,implement,debug,done,where,revert,archive}.md` — source; installed to `<project>/.claude/commands/`
 - **State**: `<project>/.claude/workflow/state.json` — tracks phase, steps, commits
 - **Plans**: `<project>/.claude/plans/<YYYY-MM-DD>-<slug>/` — prd.md, architecture.md, plan.md
 - **Learnings**: `<project>/docs/solutions/<category>/` — captured by `/done`
