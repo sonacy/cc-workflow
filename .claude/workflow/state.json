@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "feature": "Workflow v2 — revert, archive, sequential implement, interactive done",
+  "slug": "workflow-v2",
+  "branch": "feat/workflow-v2",
+  "branch_type": "feat",
+  "phase": "plan-complete",
+  "plan_dir": ".claude/plans/2026-03-25-workflow-v2",
+  "created_at": "2026-03-25T00:00:00Z",
+  "updated_at": "2026-03-25T00:00:00Z",
+  "steps": [
+    {"id": 1, "name": "Create /revert command", "status": "pending", "commit": null},
+    {"id": 2, "name": "Create /archive command", "status": "pending", "commit": null},
+    {"id": 3, "name": "Rewrite /implement to run all steps sequentially + auto-PR", "status": "pending", "commit": null},
+    {"id": 4, "name": "Rewrite /done with interactive code review", "status": "pending", "commit": null},
+    {"id": 5, "name": "Update install.sh, CLAUDE.md, README.md", "status": "pending", "commit": null}
+  ],
+  "debug_log": []
+}
