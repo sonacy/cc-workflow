@@ -37,7 +37,7 @@ Investigates root cause systematically, applies minimal fix, verifies no regress
 
 ### /done
 
-Runs mandatory interactive code review — presents findings, waits for your approval before fixing. Re-runs lint/test/build after fixes. Captures learnings. Checks merge status, switches to default branch.
+Runs mandatory interactive code review — presents findings, waits for your approval before fixing. Re-runs lint/test/build after fixes. Generates `review.md` — a session review capturing plan decisions, implementation, bugs/fixes with durations and conversation rounds, code review results, and learnings. Checks merge status, switches to default branch.
 
 ### /where
 

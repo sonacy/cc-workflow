@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "feature": "Add review.md generation to /done",
+  "slug": "review-doc",
+  "branch": "feat/review-doc",
+  "branch_type": "feat",
+  "phase": "plan-complete",
+  "plan_dir": ".claude/plans/2026-03-25-review-doc",
+  "created_at": "2026-03-25T02:00:00Z",
+  "updated_at": "2026-03-25T02:00:00Z",
+  "plan_commit": null,
+  "steps": [
+    {"id": 1, "name": "Add review doc generation to /done", "status": "pending", "commit": null},
+    {"id": 2, "name": "Update CLAUDE.md and README", "status": "pending", "commit": null}
+  ],
+  "debug_log": []
+}
