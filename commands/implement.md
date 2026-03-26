@@ -60,7 +60,9 @@ Also check `docs/solutions/` for any relevant past learnings.
 
 ## Step 4: Implement All Pending Steps
 
-For each step with `status: "pending"`, in order:
+First, check for any step with `status: "in-progress"` — this means a previous run was interrupted. Resume from that step with a message: "Resuming Step {{id}} (was in-progress from a previous run)."
+
+Then, for each step with `status: "pending"` or `"in-progress"`, in order:
 
 ### 4a: Show Progress
 
@@ -127,7 +129,7 @@ If any check fails:
 1. Read the error output
 2. Fix the issue
 3. Re-run the failing check
-4. Repeat until all checks pass
+4. Repeat until all checks pass (maximum 3 attempts per check — if still failing after 3, surface the error to user and stop)
 5. Commit fixes: `fix: resolve lint/test/build errors`
 
 If a check doesn't apply (no build system, no linter, no tests), skip it.
@@ -140,24 +142,25 @@ git push -u origin {{branch}}
 
 ## Step 7: Create PR/MR
 
-Detect the platform from the git remote URL:
+Detect the default branch and platform:
 
-1. Check: `git remote get-url origin`
-2. If contains `github.com`:
+1. Detect default branch: `git remote show origin | grep 'HEAD branch'` → fallback to main/master/develop
+2. Check remote URL: `git remote get-url origin`
+3. If contains `github.com`:
    - Check if `gh` CLI is available: `which gh`
    - If yes: `gh pr create --title "{{feature}}" --body "{{auto-generated summary}}"`
    - If no: Tell user to create PR manually on GitHub
-3. If contains `gitlab.com` or `gitlab`:
+4. If contains `gitlab.com` or `gitlab`:
    - Check if `glab` CLI is available: `which glab`
    - If yes: `glab mr create --title "{{feature}}" --description "{{auto-generated summary}}"`
    - If no: Tell user to create MR manually on GitLab
-4. Otherwise:
+5. Otherwise:
    - Tell user: "Push is done. Please create a PR/MR on your platform for branch `{{branch}}`."
 
 The auto-generated summary should include:
 - Feature name
 - List of implementation steps with commit SHAs
-- Files changed (`git diff --stat main...HEAD`)
+- Files changed (`git diff --stat {{default_branch}}...HEAD`)
 
 ## Step 8: Report
 

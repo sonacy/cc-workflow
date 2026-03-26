@@ -60,17 +60,26 @@ Create `.claude/workflow/archive/{{slug}}-archived.md`:
 {{user's reason}}
 ```
 
-## Step 4: Clean Up
+## Step 4: Commit Archive Doc
 
-1. Detect default branch: `git remote show origin | grep 'HEAD branch'`
-2. Switch to default branch: `git checkout {{default_branch}}`
-3. Pull latest: `git pull origin {{default_branch}}`
-4. Delete feature branch locally: `git branch -D {{branch}}`
-5. Delete remote branch if pushed: `git push origin --delete {{branch}}` (ignore errors)
-6. Remove state file: `rm -f .claude/workflow/state.json`
-7. Note: Plan docs in `.claude/plans/` are kept for reference (they're on the deleted branch anyway, but archive doc captures the summary)
+Before switching branches, commit the archive doc so it's preserved:
+```bash
+git add .claude/workflow/archive/{{slug}}-archived.md
+git rm .claude/workflow/state.json
+git commit -m "chore: archive {{feature}} (abandoned)"
+```
 
-## Step 5: Report
+## Step 5: Clean Up
+
+1. Check for uncommitted changes: `git status`. If dirty, warn user and ask to stash or discard before proceeding.
+2. Detect default branch: `git remote show origin | grep 'HEAD branch'`
+3. Switch to default branch: `git checkout {{default_branch}}`
+4. Pull latest: `git pull origin {{default_branch}}`
+5. Delete feature branch locally: `git branch -D {{branch}}`
+6. Delete remote branch if pushed: `git push origin --delete {{branch}}` (ignore errors)
+7. Note: Plan docs and archive doc were on the deleted branch. The archive doc captures the summary of what was planned and why it was abandoned.
+
+## Step 6: Report
 
 ```
 Feature archived: **{{feature}}**

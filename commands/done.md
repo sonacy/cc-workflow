@@ -29,9 +29,16 @@ If phase is `plan` or `plan-complete`:
 
 Run `git status`. If there are uncommitted changes:
 ```
-You have uncommitted changes. Committing them before code review.
+You have uncommitted changes:
+{{list of changed files}}
+
+Options:
+- "commit" — commit them before review
+- "stash" — stash them (review only committed work)
+- "cancel" — abort /done
 ```
-Stage and commit: `chore: uncommitted work before review`
+
+**WAIT for user response.** Apply their choice before proceeding.
 
 ## Step 3: Code Review (MANDATORY)
 

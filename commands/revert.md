@@ -16,6 +16,16 @@ Argument: $ARGUMENTS
 
 No `/revert done` — after done, code is merged. Use git commands directly if needed.
 
+If no argument is provided, show usage:
+```
+Usage: /revert <phase>
+
+  /revert plan      — Discard everything, delete branch, start fresh
+  /revert implement — Discard code, keep plan docs
+  /revert debug     — Discard debug fixes, keep implementation
+```
+Stop here.
+
 ## Step 1: Load State
 
 Read `.claude/workflow/state.json`.
@@ -35,7 +45,16 @@ Check if the current phase has reached the revert target:
 
 If invalid, tell the user and stop.
 
-## Step 3: Confirm with User
+## Step 3: Check for Uncommitted Changes
+
+Run `git status`. If there are uncommitted changes:
+```
+You have uncommitted changes. These will be lost during revert.
+Options: "stash" to save them, "discard" to lose them, "cancel" to abort.
+```
+**WAIT for user response.** Apply stash or discard accordingly. If cancel, stop.
+
+## Step 4: Confirm with User
 
 **WARNING**: This is a destructive operation.
 
@@ -65,20 +84,19 @@ Type "confirm" to proceed, or anything else to cancel.
 
 **WAIT for user response. Do NOT proceed without "confirm".**
 
-## Step 4: Execute Revert
+## Step 5: Execute Revert
 
 ### /revert plan
 
 1. Detect default branch (`git remote show origin | grep 'HEAD branch'`)
-2. Switch to default branch: `git checkout {{default_branch}}`
-3. Delete the feature branch: `git branch -D {{branch}}`
-4. Delete remote branch if pushed: `git push origin --delete {{branch}}` (ignore errors if not pushed)
-5. Remove plan directory: `rm -rf {{plan_dir}}`
-6. Remove state file: `rm -f .claude/workflow/state.json`
+2. Remove state file: `rm -f .claude/workflow/state.json`
+3. Switch to default branch: `git checkout {{default_branch}}`
+4. Delete the feature branch: `git branch -D {{branch}}`
+5. Delete remote branch if pushed: `git push origin --delete {{branch}}` (ignore errors if not pushed)
 
 ### /revert implement
 
-1. Find the plan commit (the commit with message "docs: add plan for {{feature}}")
+1. Read `plan_commit` from state.json (set during `/plan`). If null, fall back to searching `git log --oneline` for the plan commit.
 2. `git reset --soft {{plan_commit_sha}}`
 3. `git reset HEAD .` (unstage everything)
 4. `git checkout -- .` (discard all working directory changes)
@@ -97,7 +115,7 @@ Type "confirm" to proceed, or anything else to cancel.
    - Set phase to `implement`
    - Clear debug_log
 
-## Step 5: Report
+## Step 6: Report
 
 ```
 Reverted to {{target}} phase.

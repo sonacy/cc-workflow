@@ -33,11 +33,11 @@ if [ -f "$CONFIG_FILE" ]; then
   if [ -n "$OLD_PREFIX" ]; then
     echo ""
     echo "Existing installation found (prefix: '${OLD_PREFIX}')."
-    echo "Commands: /${OLD_PREFIX}:plan, /${OLD_PREFIX}:implement, /${OLD_PREFIX}:debug, /${OLD_PREFIX}:done, /${OLD_PREFIX}:where"
+    echo "Commands: /${OLD_PREFIX}:plan, /${OLD_PREFIX}:implement, /${OLD_PREFIX}:debug, /${OLD_PREFIX}:done, /${OLD_PREFIX}:where, /${OLD_PREFIX}:revert, /${OLD_PREFIX}:archive"
   else
     echo ""
     echo "Existing installation found (no prefix)."
-    echo "Commands: /plan, /implement, /debug, /done"
+    echo "Commands: /plan, /implement, /debug, /done, /where, /revert, /archive"
   fi
   echo ""
   echo "Options:"
