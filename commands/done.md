@@ -1,18 +1,17 @@
 ---
-description: "Finish the workflow: verify, update docs, capture learnings, suggest PR"
+description: "Finish the workflow: code review with user approval, verify, merge check"
 ---
 
 # /done — Complete the Workflow
 
-You are in Phase 4 of cc-workflow. Your job is to verify everything works, update documentation, capture learnings for future reuse, archive the workflow state, and suggest creating a PR.
+You are in Phase 4 of cc-workflow. Your job is to run an interactive code review, apply approved fixes, verify everything passes, then handle merge and cleanup.
 
 ## Input
 
 Argument: $ARGUMENTS
 
-- (empty) — run full verification and wrap-up
-- `skip-verify` — skip verification, go straight to docs and wrap-up
-- Any other text is treated as notes to include in the summary
+- (empty) — run full code review + verification + merge check
+- Any text is treated as notes to include in the summary
 
 ## Step 1: Load State
 
@@ -30,79 +29,22 @@ If phase is `plan` or `plan-complete`:
 
 Run `git status`. If there are uncommitted changes:
 ```
-You have uncommitted changes. Committing them before final verification.
-```
-Stage and commit: `chore: uncommitted work before verification`
+You have uncommitted changes:
+{{list of changed files}}
 
-## Step 3: Verification (unless skip-verify)
-
-Run a comprehensive verification of the project:
-
-### 3a: Build
-Run the project's build command (detect from package.json scripts, Makefile, Cargo.toml, etc.):
-- `npm run build` / `pnpm build` / `yarn build`
-- `cargo build`
-- `go build ./...`
-- `make build`
-- Or whatever the project uses
-
-Report: PASS or FAIL with errors.
-
-### 3b: Lint
-Run the project's linter:
-- `npm run lint` / `pnpm lint`
-- `cargo clippy`
-- `golangci-lint run`
-- `ruff check .`
-
-Report: PASS or FAIL with issues.
-
-### 3c: Tests
-Run the full test suite with coverage:
-- `npm test -- --coverage`
-- `cargo test`
-- `go test -cover ./...`
-- `pytest --cov`
-
-Report: PASS or FAIL, test count, coverage percentage.
-
-### 3d: Security Scan
-Dispatch the **security-reviewer** agent to scan all changes since the base branch. Provide:
-
-```
-Scan all changes on this feature branch for security issues:
-
-git diff main...HEAD
-
-Check for:
-- Hardcoded secrets (API keys, passwords, tokens)
-- SQL injection vulnerabilities
-- XSS vulnerabilities
-- Unvalidated user input
-- Authentication/authorization gaps
-- Sensitive data exposure in logs or error messages
+Options:
+- "commit" — commit them before review
+- "stash" — stash them (review only committed work)
+- "cancel" — abort /done
 ```
 
-Report: Issues found (CRITICAL/HIGH/MEDIUM/LOW).
+**WAIT for user response.** Apply their choice before proceeding.
 
-### Verification Summary
+## Step 3: Code Review (MANDATORY)
 
-```
-## Verification Results
+**Always run code review before completing.** This is not optional.
 
-| Check | Status | Details |
-|-------|--------|---------|
-| Build | PASS/FAIL | {{details}} |
-| Lint  | PASS/FAIL | {{details}} |
-| Tests | PASS/FAIL | {{count}} tests, {{coverage}}% coverage |
-| Security | PASS/FAIL | {{issue_count}} issues |
-```
-
-If CRITICAL issues exist, warn the user but do NOT block. They can decide whether to fix now or proceed.
-
-## Step 4: Code Review
-
-Dispatch the **code-reviewer** agent on the full diff since branch creation. Provide:
+Dispatch the **code-reviewer** agent on the full diff since branch creation:
 
 ```
 Review all changes on this feature branch:
@@ -113,24 +55,74 @@ Plan: {{plan_dir}}/
 
 git diff main...HEAD
 
-Focus on:
-- Does the implementation match the plan and PRD?
-- Are there bugs, logic errors, or missing edge cases?
-- Is test coverage adequate?
-- Are there architectural concerns?
+Review for:
+- Does the implementation match the plan?
+- Bugs, logic errors, missing edge cases
+- Security issues
 - Code quality: naming, structure, duplication
+- Error handling completeness
 ```
 
-**Create actionable items** from the review, not just a report:
-- CRITICAL/HIGH issues → list specific files and what to fix
-- If the user wants to fix them: "Run `/debug <issue>` for each"
-- If they want to proceed: continue to next step
+### 3a: Present Findings to User
+
+Format each finding as:
+
+```
+## Code Review Results
+
+### Finding 1: [SEVERITY] {{title}}
+**File**: {{file_path}}:{{line}}
+**Issue**: {{description}}
+**Suggestion**: {{fix}}
+
+### Finding 2: [SEVERITY] {{title}}
+...
+
+---
+For each finding, respond with:
+- "fix N" — apply the suggested fix for finding N
+- "fix all" — apply all suggested fixes
+- "skip N" — skip finding N
+- "skip all" — skip all findings and proceed
+- "discuss N" — explain more about finding N
+```
+
+**WAIT for user response. Do NOT apply any fixes without user approval.**
+
+### 3b: Apply Approved Fixes
+
+For each finding the user approved:
+1. Apply the fix
+2. Keep changes minimal and focused
+
+After all approved fixes are applied:
+```bash
+git add <changed_files>
+git commit -m "fix: apply code review fixes"
+```
+
+## Step 4: Re-verify After Fixes
+
+If any fixes were applied in Step 3, re-run quality checks:
+
+### 4a: Lint
+Run the project's linter. If errors, fix them.
+
+### 4b: Tests
+Run the full test suite. If failures, fix them.
+
+### 4c: Build
+Run the build. If errors, fix them.
+
+If any fixes were needed:
+```bash
+git add <changed_files>
+git commit -m "fix: resolve lint/test/build errors after review"
+```
+
+If no quality checks apply (no linter, no tests, no build), skip this step.
 
 ## Step 5: Capture Learnings
-
-This is where knowledge compounds. Review the entire workflow and capture anything reusable.
-
-### 5a: Problems Solved
 
 Check the `debug_log` in state.json. For each non-trivial bug fixed, create a solution document:
 
@@ -140,7 +132,7 @@ Write to: docs/solutions/{{category}}/{{slug}}.md
 ---
 date: {{today}}
 feature: {{feature_name}}
-category: {{build-errors|test-failures|runtime-errors|integration-issues|logic-errors|best-practices}}
+category: {{category}}
 symptoms: {{what_went_wrong}}
 root_cause: {{why}}
 ---
@@ -148,134 +140,84 @@ root_cause: {{why}}
 # {{Problem Title}}
 
 ## Symptoms
-{{what the user reported or what failed}}
+{{what the user reported}}
 
 ## Root Cause
-{{the actual cause, not the symptom}}
+{{the actual cause}}
 
 ## Solution
-{{what fixed it and why}}
+{{what fixed it}}
 
 ## Prevention
-{{how to avoid this in the future}}
+{{how to avoid this}}
 ```
 
-Create `docs/solutions/` directory if it doesn't exist. This makes the solution searchable by `/plan` in future workflows.
+If no bugs were fixed, skip this step.
 
-### 5b: Patterns Discovered
+## Step 6: Push
 
-If any non-obvious patterns were established during this workflow (architectural decisions, library usage patterns, testing strategies), save them to ECC memory:
-
-Write to the project's memory directory at `.claude/projects/*/memory/` if it exists, capturing:
-- Key technical decisions and their rationale
-- Patterns that worked well
-- Anti-patterns to avoid
-
-### 5c: Update CLAUDE.md
-
-If the feature introduced new architectural patterns or conventions that future development should follow, append them to CLAUDE.md. Don't update for trivial changes.
-
-## Step 6: Update Documentation
-
-Check if these files need updating based on the changes made:
-
-1. **README.md** — If new public APIs, features, or setup steps were added
-2. **CHANGELOG.md** — If it exists, add an entry for this feature
-
-For each file: read the current content, determine if it needs changes based on the feature that was implemented, and update only if necessary. Don't force unnecessary changes.
-
-Commit documentation and learning updates:
 ```bash
-git add docs/solutions/ README.md CLAUDE.md CHANGELOG.md 2>/dev/null
-git commit -m "docs: update documentation and learnings for {{feature}}" --allow-empty
+git push origin {{branch}}
 ```
 
 ## Step 7: Generate Summary
-
-Produce a comprehensive summary of the workflow:
 
 ```
 ## Workflow Complete: {{feature}}
 
 **Branch**: {{branch}}
-**Duration**: {{created_at}} → {{now}}
 **Plan**: {{plan_dir}}/
 
 ### What Was Built
-{{2-3 sentence summary of the feature}}
+{{2-3 sentence summary}}
 
 ### Files Changed
-{{list of files created/modified with line counts, from git diff --stat main...HEAD}}
+{{git diff --stat main...HEAD}}
 
 ### Implementation Steps
 | # | Step | Status | Commit |
 |---|------|--------|--------|
-| 1 | {{name}} | done | {{short_sha}} |
-| 2 | {{name}} | done | {{short_sha}} |
-| 3 | {{name}} | skipped | — |
+{{steps table}}
 
 ### Bugs Fixed
-{{from debug_log with root causes, or "None"}}
+{{debug_log or "None"}}
 
-### Learnings Captured
-{{list of docs/solutions/ files created, or "None"}}
-
-### Test Coverage
-{{coverage}}% ({{test_count}} tests)
-
-### Verification
-Build: PASS/FAIL | Lint: PASS/FAIL | Tests: PASS/FAIL | Security: PASS/FAIL
+### Code Review
+{{count}} findings: {{fixed}} fixed, {{skipped}} skipped
 ```
 
 ## Step 8: Archive State
 
-1. Create `.claude/workflow/archive/` directory if it doesn't exist
+1. Create `.claude/workflow/archive/` if needed
 2. Copy `state.json` to `.claude/workflow/archive/{{slug}}-{{date}}.json`
 3. Delete `.claude/workflow/state.json`
 4. Commit:
 ```bash
 git add .claude/workflow/
 git commit -m "chore: archive workflow state for {{feature}}"
-```
-
-## Step 9: Final Push
-
-```bash
 git push origin {{branch}}
 ```
 
-## Step 10: Merge Check
+## Step 9: Merge Check
 
-Before completing, ensure the feature branch is merged into the default branch.
+### 9a: Detect Default Branch
 
-### 10a: Detect Default Branch
+`git remote show origin | grep 'HEAD branch'` → fallback to main/master/develop.
 
-Determine the default branch name:
-1. Try `git remote show origin` and parse "HEAD branch"
-2. If that fails, check which of `main`, `master`, `develop` exists locally
-3. If none found, ask the user
+### 9b: Check if Merged
 
-### 10b: Check if Merged
-
-Check if the feature branch commits are on the default branch:
 ```bash
 git fetch origin {{default_branch}}
-git log origin/{{default_branch}} --oneline | grep {{latest_commit_sha}}
-```
-
-Or more reliably:
-```bash
 git branch -r --contains HEAD | grep "origin/{{default_branch}}"
 ```
 
-### 10c: If NOT Merged
+### 9c: If NOT Merged
 
-Tell the user:
 ```
 Your branch `{{branch}}` is not yet merged into `{{default_branch}}`.
 
 Please merge it via your platform (GitHub, GitLab, etc.):
-- Push is done: create a PR/MR and merge it
+- Push is done — create/merge the PR/MR
 - Or merge locally if that's your workflow
 
 Type "merged" when done, or "skip" to finish without merging.
@@ -283,30 +225,23 @@ Type "merged" when done, or "skip" to finish without merging.
 
 **WAIT for user response.**
 
-If the user says "merged":
-- Run `git fetch origin {{default_branch}}` and re-check
-- If still not merged, tell them: "I don't see the merge on `{{default_branch}}` yet. Please check and try again, or type 'skip'."
+If "merged": fetch and re-check. If still not merged, ask again.
+If "skip": proceed.
 
-If the user says "skip":
-- Proceed without merging (they can merge later)
+### 9d: Switch to Default Branch
 
-### 10d: Switch to Default Branch
-
-After merge is confirmed (or skipped):
 ```bash
 git checkout {{default_branch}}
 git pull origin {{default_branch}}
 ```
 
-This ensures the user is on an up-to-date default branch, ready for the next `/plan`.
-
-## Step 11: Suggest Next Action
+## Step 10: Suggest Next Action
 
 ```
 Workflow complete! Switched to `{{default_branch}}` (up to date).
 
 Feature: {{feature}}
-Branch: {{branch}} (merged)
+Branch: {{branch}}
 
 Start a new feature: `/plan <description>`
 ```

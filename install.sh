@@ -22,7 +22,7 @@ if [ ! -d "$TARGET_DIR/.git" ]; then
   exit 1
 fi
 
-COMMANDS=(plan implement debug done where)
+COMMANDS=(plan implement debug done where revert archive)
 CONFIG_FILE="$TARGET_DIR/.claude/.cc-workflow-config"
 PREFIX=""
 OLD_PREFIX=""
@@ -33,11 +33,11 @@ if [ -f "$CONFIG_FILE" ]; then
   if [ -n "$OLD_PREFIX" ]; then
     echo ""
     echo "Existing installation found (prefix: '${OLD_PREFIX}')."
-    echo "Commands: /${OLD_PREFIX}:plan, /${OLD_PREFIX}:implement, /${OLD_PREFIX}:debug, /${OLD_PREFIX}:done, /${OLD_PREFIX}:where"
+    echo "Commands: /${OLD_PREFIX}:plan, /${OLD_PREFIX}:implement, /${OLD_PREFIX}:debug, /${OLD_PREFIX}:done, /${OLD_PREFIX}:where, /${OLD_PREFIX}:revert, /${OLD_PREFIX}:archive"
   else
     echo ""
     echo "Existing installation found (no prefix)."
-    echo "Commands: /plan, /implement, /debug, /done"
+    echo "Commands: /plan, /implement, /debug, /done, /where, /revert, /archive"
   fi
   echo ""
   echo "Options:"
@@ -140,6 +140,12 @@ for cmd in "${COMMANDS[@]}"; do
       -e "s|\`/where\`|\`/${PREFIX}:where\`|g" \
       -e "s|\`/where |\`/${PREFIX}:where |g" \
       -e "s|# /where |# /${PREFIX}:where |g" \
+      -e "s|\`/revert\`|\`/${PREFIX}:revert\`|g" \
+      -e "s|\`/revert |\`/${PREFIX}:revert |g" \
+      -e "s|# /revert |# /${PREFIX}:revert |g" \
+      -e "s|\`/archive\`|\`/${PREFIX}:archive\`|g" \
+      -e "s|\`/archive |\`/${PREFIX}:archive |g" \
+      -e "s|# /archive |# /${PREFIX}:archive |g" \
       "$SCRIPT_DIR/commands/$cmd.md" > "$TARGET_DIR/.claude/commands/$dest_name"
   else
     cp "$SCRIPT_DIR/commands/$cmd.md" "$TARGET_DIR/.claude/commands/$dest_name"
@@ -181,15 +187,19 @@ echo ""
 if [ -n "$PREFIX" ]; then
   echo "Usage (with prefix '${PREFIX}'):"
   echo "  /${PREFIX}:plan <description>     Start planning a feature"
-  echo "  /${PREFIX}:implement              Implement the next step"
+  echo "  /${PREFIX}:implement              Implement all steps + create PR/MR"
   echo "  /${PREFIX}:debug <bug>            Fix a bug"
-  echo "  /${PREFIX}:done                   Finish and prepare for PR"
+  echo "  /${PREFIX}:done                   Code review + verify + merge"
   echo "  /${PREFIX}:where                  Show current state and next action"
+  echo "  /${PREFIX}:revert <phase>         Revert to plan/implement/debug"
+  echo "  /${PREFIX}:archive                Abandon feature with archive doc"
 else
   echo "Usage:"
   echo "  /plan <description>     Start planning a feature"
-  echo "  /implement              Implement the next step"
+  echo "  /implement              Implement all steps + create PR/MR"
   echo "  /debug <bug>            Fix a bug"
-  echo "  /done                   Finish and prepare for PR"
+  echo "  /done                   Code review + verify + merge"
   echo "  /where                  Show current state and next action"
+  echo "  /revert <phase>         Revert to plan/implement/debug"
+  echo "  /archive                Abandon feature with archive doc"
 fi

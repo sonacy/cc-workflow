@@ -187,6 +187,7 @@ Create `.claude/workflow/state.json`:
   "plan_dir": ".claude/plans/{{date}}-{{slug}}",
   "created_at": "{{ISO_8601_now}}",
   "updated_at": "{{ISO_8601_now}}",
+  "plan_commit": null,
   "steps": [
     {"id": 1, "name": "{{step_1}}", "status": "pending", "commit": null},
     {"id": 2, "name": "{{step_2}}", "status": "pending", "commit": null}
@@ -202,6 +203,12 @@ Ensure `.claude/workflow/` directory exists first.
 ```bash
 git add .claude/plans/{{date}}-{{slug}}/ .claude/workflow/state.json
 git commit -m "docs: add plan for {{feature_name}}"
+```
+
+After committing, update `state.json` to store the plan commit SHA:
+- Read the commit SHA: `git rev-parse HEAD`
+- Set `"plan_commit": "{{sha}}"` in state.json
+- Amend the commit: `git add .claude/workflow/state.json && git commit --amend --no-edit`
 ```
 
 ## Step 12: Done
