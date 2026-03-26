@@ -12,7 +12,7 @@
 
 - **Commands**: `commands/{plan,implement,debug,done,where,revert,archive}.md` — source; installed to `<project>/.claude/commands/`
 - **State**: `<project>/.claude/workflow/state.json` — tracks phase, steps, commits
-- **Plans**: `<project>/.claude/plans/<YYYY-MM-DD>-<slug>/` — prd.md, architecture.md, plan.md
+- **Plans**: `<project>/.claude/plans/<YYYY-MM-DD>-<slug>/` — prd.md, architecture.md, plan.md, review.md
 - **Learnings**: `<project>/docs/solutions/<category>/` — captured by `/done`
 - **Templates**: `templates/` — document templates used by `/plan`
 
