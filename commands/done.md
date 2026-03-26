@@ -272,18 +272,18 @@ git push origin {{branch}}
 
 ## Step 10: Merge Check
 
-### 9a: Detect Default Branch
+### 10a: Detect Default Branch
 
 `git remote show origin | grep 'HEAD branch'` → fallback to main/master/develop.
 
-### 9b: Check if Merged
+### 10b: Check if Merged
 
 ```bash
 git fetch origin {{default_branch}}
 git branch -r --contains HEAD | grep "origin/{{default_branch}}"
 ```
 
-### 9c: If NOT Merged
+### 10c: If NOT Merged
 
 ```
 Your branch `{{branch}}` is not yet merged into `{{default_branch}}`.
@@ -300,7 +300,7 @@ Type "merged" when done, or "skip" to finish without merging.
 If "merged": fetch and re-check. If still not merged, ask again.
 If "skip": proceed.
 
-### 9d: Switch to Default Branch
+### 10d: Switch to Default Branch
 
 ```bash
 git checkout {{default_branch}}
