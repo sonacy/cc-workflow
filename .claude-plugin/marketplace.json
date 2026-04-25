@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "cc-workflow",
-      "source": ".",
+      "source": "./",
       "description": "4-phase Claude Code workflow for feature development: /plan → /implement → /debug → /done",
       "version": "1.0.0",
       "author": {
