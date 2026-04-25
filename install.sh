@@ -146,9 +146,11 @@ for cmd in "${COMMANDS[@]}"; do
       -e "s|\`/archive\`|\`/${PREFIX}:archive\`|g" \
       -e "s|\`/archive |\`/${PREFIX}:archive |g" \
       -e "s|# /archive |# /${PREFIX}:archive |g" \
+      -e "s|\${CLAUDE_PLUGIN_ROOT}/templates/|.claude/templates/cc-workflow/|g" \
       "$SCRIPT_DIR/commands/$cmd.md" > "$TARGET_DIR/.claude/commands/$dest_name"
   else
-    cp "$SCRIPT_DIR/commands/$cmd.md" "$TARGET_DIR/.claude/commands/$dest_name"
+    sed "s|\${CLAUDE_PLUGIN_ROOT}/templates/|.claude/templates/cc-workflow/|g" \
+      "$SCRIPT_DIR/commands/$cmd.md" > "$TARGET_DIR/.claude/commands/$dest_name"
   fi
 
   if [ -n "$PREFIX" ]; then

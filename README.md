@@ -9,17 +9,45 @@ A 4-phase Claude Code workflow for feature development. Plan, implement, debug, 
 
 ## Install
 
+### Option 1: Claude Code plugin (recommended)
+
+Add the marketplace, then install the plugin:
+
+```
+/plugin marketplace add https://github.com/sonacy/cc-workflow
+/plugin install cc-workflow@cc-workflow
+```
+
+From a local clone:
+
+```
+/plugin marketplace add /path/to/cc-workflow
+/plugin install cc-workflow@cc-workflow
+```
+
+Commands land as `/plan`, `/implement`, `/debug`, `/done`, `/where`, `/revert`, `/archive`. Claude Code namespaces to `/cc-workflow:<cmd>` on conflict.
+
+Update / uninstall:
+
+```
+/plugin marketplace update cc-workflow
+/plugin update cc-workflow@cc-workflow
+/plugin uninstall cc-workflow@cc-workflow
+```
+
+### Option 2: Install script (legacy)
+
 ```bash
 ./install.sh /path/to/your/project
 ```
 
-The installer detects naming conflicts (e.g., ECC plugin) and asks for a prefix:
+Detects naming conflicts (e.g., ECC plugin) and asks for a prefix:
 
 ```
 Prefix (or Enter to skip): cc
 ```
 
-With prefix `cc`, commands become `/cc:plan`, `/cc:implement`, etc. Re-running install detects existing prefix and lets you change it.
+With prefix `cc`, commands become `/cc:plan`, `/cc:implement`, etc. Re-running install detects the existing prefix and lets you change it.
 
 ## Commands
 
