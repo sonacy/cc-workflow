@@ -1,0 +1,13 @@
+{
+  "name": "cc-workflow",
+  "description": "4-phase Claude Code workflow for feature development: /plan → /implement → /debug → /done",
+  "version": "1.0.0",
+  "author": {
+    "name": "sonacy",
+    "email": "sonacy2538@gmail.com"
+  },
+  "homepage": "https://github.com/sonacy/cc-workflow",
+  "repository": "https://github.com/sonacy/cc-workflow",
+  "license": "MIT",
+  "keywords": ["workflow", "planning", "tdd", "feature-development", "code-review"]
+}

@@ -5,6 +5,9 @@
 .claude/.cc-workflow-config
 .claude/workflow/state.json
 
+# OMC (oh-my-claudecode) local state
+.omc/
+
 # Logs
 logs
 *.log

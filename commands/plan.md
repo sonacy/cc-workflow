@@ -70,7 +70,7 @@ Focus on:
 
 ## Step 4: Generate PRD
 
-Using the template from `.claude/templates/cc-workflow/prd.md` as a guide (do NOT use the template literally — adapt it to the actual feature), generate a PRD document:
+Using the template from `${CLAUDE_PLUGIN_ROOT}/templates/prd.md` as a guide (do NOT use the template literally — adapt it to the actual feature), generate a PRD document:
 
 - Fill in real user stories based on the feature description
 - List concrete acceptance criteria (each must be testable)
@@ -96,7 +96,7 @@ The agent should produce:
 - API contracts — if the feature involves APIs
 - Technology choices with rationale
 
-Use the template from `.claude/templates/cc-workflow/architecture.md` as a guide.
+Use the template from `${CLAUDE_PLUGIN_ROOT}/templates/architecture.md` as a guide.
 
 Write to: `.claude/plans/{{date}}-{{slug}}/architecture.md`
 
@@ -114,7 +114,7 @@ The agent should produce:
 - Each step should be completable in one `/implement` invocation (2-5 minute tasks are ideal)
 - Include risks and mitigations
 
-Use the template from `.claude/templates/cc-workflow/plan.md` as a guide.
+Use the template from `${CLAUDE_PLUGIN_ROOT}/templates/plan.md` as a guide.
 
 Write to: `.claude/plans/{{date}}-{{slug}}/plan.md`
 
